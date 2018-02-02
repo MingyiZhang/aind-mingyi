@@ -8,7 +8,7 @@ square_units = [cross(rs, cs) for rs in ('ABC','DEF','GHI') for cs in ('123','45
 unitlist = row_units + column_units + square_units
 
 # TODO: Update the unit list to add the new diagonal units
-unitlist = unitlist
+unitlist = unitlist + [[s[0]+s[1] for s in zip(rows, cols)], [s[0]+s[1] for s in zip(rows, cols[::-1])]]
 
 
 # Must be called after all units (including diagonals) are added to the unitlist
@@ -103,7 +103,7 @@ def reduce_puzzle(values):
     -------
     dict or False
         The values dictionary after continued application of the constraint strategies
-        no longer produces any changes, or False if the puzzle is unsolvable 
+        no longer produces any changes, or False if the puzzle is unsolvable
     """
     # TODO: Copy your code from the classroom and modify it to complete this function
     raise NotImplementedError
@@ -139,7 +139,7 @@ def solve(grid):
     ----------
     grid(string)
         a string representing a sudoku grid.
-        
+
         Ex. '2.............62....1....7...6..8...3...9...7...6..4...4....8....52.............3'
 
     Returns
