@@ -43,8 +43,35 @@ def naked_twins(values):
     and because it is simpler (since the reduce_puzzle function already calls this
     strategy repeatedly).
     """
-    # TODO: Implement this function!
-    raise NotImplementedError
+    # # TODO: Implement this function!
+    # raise NotImplementedError
+
+    # find naked_twins:
+    # built dict = {twin's value: boxes in a unit without twins}
+    value_to_otherbox = defaultdict(list)
+    for unit in unitlist:
+        value_to_box = defaultdict(list)
+        for box in unit:
+            if len(values[box]) == 2:
+                value_to_box[values[box]].append(box)
+        # print(value_to_box)
+
+        for value in value_to_box:
+            if len(value_to_box[value]) == 2:
+                other_boxes = [item for item in unit if item not in value_to_box[value]]
+                value_to_otherbox[value] += other_boxes
+    # print(value_to_otherbox)
+
+    # eliminate twin values in other boxes
+    for value in value_to_otherbox:
+        for digit in value:
+            for box in value_to_otherbox[value]:
+                if digit in values[box]:
+                    values[box] = values[box].replace(digit, '')
+    return values
+
+
+
 
 
 def eliminate(values):
@@ -63,8 +90,16 @@ def eliminate(values):
     dict
         The values dictionary with the assigned values eliminated from peers
     """
-    # TODO: Copy your code from the classroom to complete this function
-    raise NotImplementedError
+    # # TODO: Copy your code from the classroom to complete this function
+    # raise NotImplementedError
+    one_value_boxes = [box for box in boxes if len(values[box]) == 1]
+    for box in one_value_boxes:
+        digit = values[box]
+        for peer in peers[box]:
+            if digit in values[peer]:
+                values[peer] = values[peer].replace(digit, '')
+    return values
+
 
 
 def only_choice(values):
@@ -87,8 +122,14 @@ def only_choice(values):
     -----
     You should be able to complete this function by copying your code from the classroom
     """
-    # TODO: Copy your code from the classroom to complete this function
-    raise NotImplementedError
+    # # TODO: Copy your code from the classroom to complete this function
+    # raise NotImplementedError
+    for unit in unitlist:
+        for digit in '123456789':
+            dboxes = [box for box in unit if digit in values[box]]
+            if len(dboxes) == 1:
+                values[dboxes[0]] = digit
+    return values
 
 
 def reduce_puzzle(values):
@@ -105,8 +146,20 @@ def reduce_puzzle(values):
         The values dictionary after continued application of the constraint strategies
         no longer produces any changes, or False if the puzzle is unsolvable
     """
-    # TODO: Copy your code from the classroom and modify it to complete this function
-    raise NotImplementedError
+    # # TODO: Copy your code from the classroom and modify it to complete this function
+    # raise NotImplementedError
+    stalled = False
+    while not stalled:
+        solved_value_before = len([box for box in values.keys() if len(values[box]) == 1])
+        values = eliminate(values)
+        values = only_choice(values)
+        values = naked_twins(values)
+        solved_value_after = len([box for box in values.keys() if len(values[box]) == 1])
+        stalled = solved_value_before == solved_value_after
+        if len([box for box in values.keys() if len(values[box]) == 0]):
+            return False
+    return values
+
 
 
 def search(values):
@@ -128,8 +181,24 @@ def search(values):
     You should be able to complete this function by copying your code from the classroom
     and extending it to call the naked twins strategy.
     """
-    # TODO: Copy your code from the classroom to complete this function
-    raise NotImplementedError
+    # # TODO: Copy your code from the classroom to complete this function
+    # raise NotImplementedError
+    values = reduce_puzzle(values)
+
+    if values is False:
+        return False
+    if all(len(values[s]) == 1 for s in boxes):
+        return values
+
+    n, s = min((len(values[b]), b) for b in boxes if len(values[b]) > 1)
+
+    for value in values[s]:
+        new_values = values.copy()
+        new_values[s] = value
+        attempt = search(new_values)
+        if attempt:
+            return attempt
+
 
 
 def solve(grid):
