@@ -34,8 +34,16 @@ def custom_score(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    if game.is_loser(player):
+        return float('-inf')
+    if game.is_winner(player):
+        return float('inf')
+    # number of legal moves of active player
+    act_moves = len(game.get_legal_moves(player))
+    # number of legal moves of inactive player
+    inact_moves = len(game.get_legal_moves(game.get_opponent(player)))
+
+    return float(act_moves * 0.05 - inact_moves * 0.95)
 
 
 def custom_score_2(game, player):
@@ -60,8 +68,15 @@ def custom_score_2(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    if game.is_loser(player):
+        return float('-inf')
+    if game.is_winner(player):
+        return float('inf')
+
+    act_moves = len(game.get_legal_moves(player))
+    inact_moves = len(game.get_legal_moves(game.get_opponent(player)))
+
+    return float(0.5 * act_moves - 0.5 * inact_moves)
 
 
 def custom_score_3(game, player):
@@ -86,8 +101,15 @@ def custom_score_3(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    if game.is_loser(player):
+        return float('-inf')
+    if game.is_winner(player):
+        return float('inf')
+
+    act_moves = len(game.get_legal_moves(player))
+    inact_moves = len(game.get_legal_moves(game.get_opponent(player)))
+
+    return float(0.95 * act_moves - 0.05 * inact_moves)
 
 
 class IsolationPlayer:
@@ -112,7 +134,7 @@ class IsolationPlayer:
         positive value large enough to allow the function to return before the
         timer expires.
     """
-    def __init__(self, search_depth=3, score_fn=custom_score, timeout=10.):
+    def __init__(self, search_depth=3, score_fn=custom_score, timeout=20.):
         self.search_depth = search_depth
         self.score = score_fn
         self.time_left = None
@@ -209,11 +231,68 @@ class MinimaxPlayer(IsolationPlayer):
                 each helper function or else your agent will timeout during
                 testing.
         """
+
+        def terminal_test(game):
+            '''
+            Check if the current node is a terminal
+            Returns
+            -------
+            bool
+                TRUE: the node is terminal
+                FALSE: the node is not terminal
+            '''
+            if self.time_left() < self.TIMER_THRESHOLD:
+                raise SearchTimeout()
+            return not bool(game.get_legal_moves())
+
+        def min_value(game, depth):
+            '''
+            Get the score for the min player
+            '''
+            if self.time_left() < self.TIMER_THRESHOLD:
+                raise SearchTimeout()
+
+            if terminal_test(game) or depth <= 0:
+                # if the node is terminal or the search achieves the depth limits
+                # return the score
+                return self.score(game, self)
+            # find the minimum score from the children nodes
+            v = float('inf')
+            for move in game.get_legal_moves():
+                v = min(v, max_value(game.forecast_move(move), depth - 1))
+            return v
+
+        def max_value(game, depth):
+            '''
+            Get the score for the max player
+            '''
+            if self.time_left() < self.TIMER_THRESHOLD:
+                raise SearchTimeout()
+
+            if terminal_test(game) or depth <= 0:
+                # if the node is terminal or the search achieves the depth limits
+                # return the score
+                return self.score(game, self)
+            # find the maximum score from the children nodes
+            v = float('-inf')
+            for move in game.get_legal_moves():
+                v = max(v, min_value(game.forecast_move(move), depth - 1))
+            return v
+
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
-
-        # TODO: finish this function!
-        raise NotImplementedError
+        # setup the initial score and move
+        best_score = float('-inf')
+        best_move = (-1, -1)
+        if not (terminal_test(game) or depth <= 0):
+            # if the root node is not terminal and the search depth is not 0
+            # find the best move that maximize the score in the children nodes
+            best_move = max(game.get_legal_moves(),
+                            key=lambda m: min_value(game.forecast_move(m), depth-1))
+            return best_move
+        # if the root node is terminal or the search depth is 0
+        # return (-1, -1)
+        return best_move
 
 
 class AlphaBetaPlayer(IsolationPlayer):
@@ -254,8 +333,19 @@ class AlphaBetaPlayer(IsolationPlayer):
         """
         self.time_left = time_left
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        best_move = (-1, -1)
+
+        try:
+            # loop over the depth from 0 to the largest depth
+            for depth in range(len(game.get_blank_spaces())):
+                # store the best move for each depth-fixed alpha-beta pruning search
+                best_move = self.alphabeta(game, depth)
+
+        except SearchTimeout:
+            return best_move  # Handle any actions required after timeout as needed
+
+        # Return the best move from the last completed search iteration
+        return best_move
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf")):
         """Implement depth-limited minimax search with alpha-beta pruning as
@@ -302,8 +392,78 @@ class AlphaBetaPlayer(IsolationPlayer):
                 each helper function or else your agent will timeout during
                 testing.
         """
+        def terminal_test(game):
+            '''
+            Check if the current node is a terminal
+            Returns
+            -------
+            bool
+                TRUE: the node is terminal
+                FALSE: the node is not terminal
+            '''
+            if self.time_left() < self.TIMER_THRESHOLD:
+                raise SearchTimeout()
+            return not bool(game.get_legal_moves())
+
+        def min_value(game, depth, alpha, beta):
+            '''
+            Get the score for the min player
+            '''
+            if self.time_left() < self.TIMER_THRESHOLD:
+                raise SearchTimeout()
+
+            if terminal_test(game) or depth <= 0:
+                return self.score(game, self)
+
+            v = float('inf')
+            for move in game.get_legal_moves():
+                v = min(v, max_value(game.forecast_move(move), depth-1, alpha, beta))
+                # if the score of the node is not greater than alpha
+                # return the score, and pruning
+                if v <= alpha:
+                    return v
+                beta = min(beta, v)
+            return v
+
+        def max_value(game, depth, alpha, beta):
+            '''
+            Get the score for the max player
+            '''
+            if self.time_left() < self.TIMER_THRESHOLD:
+                raise SearchTimeout()
+
+            if terminal_test(game) or depth <= 0:
+                return self.score(game, self)
+
+            v = float('-inf')
+            for move in game.get_legal_moves():
+                v = max(v, min_value(game.forecast_move(move), depth-1, alpha, beta))
+                # if the score of the node is not smaller than beta
+                # return the score, and pruning
+                if v >= beta:
+                    return v
+                alpha = max(alpha, v)
+            return v
+
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        best_score = float('-inf')
+        best_move = (-1, -1)
+        if not (terminal_test(game) or depth <= 0):
+            for move in game.get_legal_moves():
+                score = max(best_score, min_value(game.forecast_move(move), depth-1, alpha, beta))
+                # if score is greater than the best_score
+                # use score to replace best_score, use current move to replace best_move
+                if score > best_score:
+                    best_score, best_move = score, move
+                # if best_score is not smaller than beta
+                # pruning and return the current best_move
+                if best_score >= beta:
+                    return best_move
+                alpha = max(alpha, best_score)
+            # if there is no pruning, return the current best_move
+            return best_move
+        # if the root node is terminal or search depth is 0,
+        # return (-1, -1) 
+        return best_move
