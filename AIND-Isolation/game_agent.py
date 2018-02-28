@@ -43,7 +43,7 @@ def custom_score(game, player):
     # number of legal moves of inactive player
     inact_moves = len(game.get_legal_moves(game.get_opponent(player)))
 
-    return float(act_moves * 0.05 - inact_moves * 0.95)
+    return float(act_moves - inact_moves)
 
 
 def custom_score_2(game, player):
@@ -74,9 +74,12 @@ def custom_score_2(game, player):
         return float('inf')
 
     act_moves = len(game.get_legal_moves(player))
-    inact_moves = len(game.get_legal_moves(game.get_opponent(player)))
+    inact_moves = 0
+    for move in game.get_legal_moves(player):
+        new_game = game.forecast_move(move)
+        inact_moves += len(new_game.get_legal_moves()) / act_moves
 
-    return float(0.5 * act_moves - 0.5 * inact_moves)
+    return float(act_moves - inact_moves)
 
 
 def custom_score_3(game, player):
@@ -107,9 +110,8 @@ def custom_score_3(game, player):
         return float('inf')
 
     act_moves = len(game.get_legal_moves(player))
-    inact_moves = len(game.get_legal_moves(game.get_opponent(player)))
 
-    return float(0.95 * act_moves - 0.05 * inact_moves)
+    return float(act_moves)
 
 
 class IsolationPlayer:
@@ -465,5 +467,5 @@ class AlphaBetaPlayer(IsolationPlayer):
             # if there is no pruning, return the current best_move
             return best_move
         # if the root node is terminal or search depth is 0,
-        # return (-1, -1) 
+        # return (-1, -1)
         return best_move
