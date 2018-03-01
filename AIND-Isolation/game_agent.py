@@ -43,7 +43,7 @@ def custom_score(game, player):
     # number of legal moves of inactive player
     inact_moves = len(game.get_legal_moves(game.get_opponent(player)))
 
-    return float(act_moves - inact_moves)
+    return float(0.4 * act_moves - 0.6 * inact_moves)
 
 
 def custom_score_2(game, player):
@@ -79,7 +79,7 @@ def custom_score_2(game, player):
         new_game = game.forecast_move(move)
         inact_moves += len(new_game.get_legal_moves()) / act_moves
 
-    return float(act_moves - inact_moves)
+    return float(0.3 * act_moves - 0.7 * inact_moves)
 
 
 def custom_score_3(game, player):
